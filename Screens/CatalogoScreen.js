@@ -6,7 +6,7 @@ import { db } from "../firebase/config";
 import Categoria from "../components/Categoria";
 import Producto from "../components/Producto";
 
-const Catalogo = () => {
+const Catalogo = ({ navigation }) => {
 
   const [categorias, setCategorias] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -14,20 +14,18 @@ const Catalogo = () => {
   const [productos, setProductos] = useState([]);
   const [cargandoProductos, setCargandoProductos] = useState(true);
 
-  useEffect(() => {
-    obtenerCategorias();
-  }, []);
-
-  const obtenerCategorias = async () => {
+  const obtenerProductos = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, "categorias"));
+      const querySnapshot = await getDocs(collection(db, "Productos"));
       const datos = [];
       querySnapshot.forEach((doc) => {
         datos.push({ id: doc.id, ...doc.data() });
       });
-      setCategorias(datos);
+      setProductos(datos);
     } catch (error) {
-      console.error("Error obteniendo categorías: ", error);
+      console.error("Error obteniendo productos: ", error);
+    } finally {
+      setCargandoProductos(false);
     }
   };
 
@@ -57,6 +55,7 @@ const Catalogo = () => {
     setCategoriaSeleccionada(categoriaId);
 
     if (categoriaId === "todos") {
+      setCargandoProductos(true);
       obtenerProductos();
       return;
     }
@@ -65,7 +64,48 @@ const Catalogo = () => {
   };
 
   useEffect(() => {
-    obtenerProductos();
+    let activo = true;
+    getDocs(collection(db, "categorias"))
+      .then((querySnapshot) => {
+        if (!activo) return;
+        setCategorias(
+          querySnapshot.docs.map((documento) => ({
+            id: documento.id,
+            ...documento.data(),
+          })),
+        );
+      })
+      .catch((error) => {
+        console.error("Error obteniendo categorías: ", error);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let activo = true;
+    getDocs(collection(db, "Productos"))
+      .then((querySnapshot) => {
+        if (!activo) return;
+        setProductos(
+          querySnapshot.docs.map((documento) => ({
+            id: documento.id,
+            ...documento.data(),
+          })),
+        );
+      })
+      .catch((error) => {
+        console.error("Error obteniendo productos: ", error);
+      })
+      .finally(() => {
+        if (activo) setCargandoProductos(false);
+      });
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
   const productosFiltrados = productos.filter((producto) => {
@@ -77,22 +117,6 @@ const Catalogo = () => {
 
     return coincideCategoria && coincideBusqueda;
   });
-
-  const obtenerProductos = async () => {
-    setCargandoProductos(true);
-    try {
-      const querySnapshot = await getDocs(collection(db, "Productos"));
-      const datos = [];
-      querySnapshot.forEach((doc) => {
-        datos.push({ id: doc.id, ...doc.data() });
-      });
-      setProductos(datos);
-    } catch (error) {
-      console.error("Error obteniendo productos: ", error);
-    } finally {
-      setCargandoProductos(false);
-    }
-  };
 
   return (
     <ScrollView
@@ -150,6 +174,19 @@ const Catalogo = () => {
               imagen={producto.imagen}
               color={producto.color || "#F4F4F4"}
               tiempo={producto.tiempo || "Hoy"}
+              onPress={() =>
+                navigation.navigate("DetalleProducto", {
+                  nombre: producto.nombre,
+                  precio: producto.precio,
+                  categoria:
+                    categorias.find(
+                      (categoria) => categoria.id === producto.categoriaId,
+                    )?.nombre || "Sin categoría",
+                  color: producto.color || "#F4F4F4",
+                  imagen: producto.imagen,
+                  descripcion: producto.descripcion,
+                })
+              }
             />
           ))}
         </View>

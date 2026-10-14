@@ -1,26 +1,31 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 const Producto = (props) => {
   return (
-    <View style={styles.tarjeta}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ver detalles de ${props.nombre}`}
+      onPress={props.onPress}
+      style={styles.tarjeta}
+    >
       <View style={[styles.contenedorImagen, { backgroundColor: props.color }]}>
         <Image source={{ uri: props.imagen }} style={styles.imagen} />
       </View>
       <View style={styles.informacion}>
         <View style={styles.filaPrecio}>
           <Text style={styles.precio}>$ {props.precio}</Text>
-          <TouchableOpacity>
+          <View>
             <Ionicons name="heart-outline" size={20} color="#BFC2D9" />
-          </TouchableOpacity>
+          </View>
         </View>
         <Text style={styles.nombre} numberOfLines={1}>
           {props.nombre}
         </Text>
         <Text style={styles.tiempo}>{props.tiempo}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
