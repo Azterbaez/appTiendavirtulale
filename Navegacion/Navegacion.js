@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import Login from "../Screens/Login";
 import Catalogo from "../Screens/CatalogoScreen";
+import CategoriasScreen from "../Screens/CategoriasScreen";
 import DetalleProducto from "../Screens/DetalleProductoScreen";
 import AdminProductos from "../Screens/AdminProductosScreen";
 import FormularioProducto from "../Screens/FormularioProductoScreen";
@@ -64,6 +65,16 @@ function ClienteTabs() {
           title: "Catálogo",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CategoriaTab"
+        component={CategoriasScreen}
+        options={{
+          title: "Categorías",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="list-outline" color={color} size={size} />
           ),
         }}
       />

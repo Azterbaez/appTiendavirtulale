@@ -6,61 +6,20 @@ import { db } from "../firebase/config";
 import Categoria from "../components/Categoria";
 import Producto from "../components/Producto";
 
-const Catalogo = ({ navigation }) => {
+const Catalogo = ({ navigation, route }) => {
 
   const [categorias, setCategorias] = useState([]);
   const [busqueda, setBusqueda] = useState("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("todos");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(
+    route.params?.categoriaId || "todos",
+  );
   const [productos, setProductos] = useState([]);
   const [cargandoProductos, setCargandoProductos] = useState(true);
 
-  const obtenerProductos = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "Productos"));
-      const datos = [];
-      querySnapshot.forEach((doc) => {
-        datos.push({ id: doc.id, ...doc.data() });
-      });
-      setProductos(datos);
-    } catch (error) {
-      console.error("Error obteniendo productos: ", error);
-    } finally {
-      setCargandoProductos(false);
-    }
-  };
-
-  const obtenercategoriaporId = async (categoriaId) => {
-    setCargandoProductos(true);
-    try {
-      const consulta = query(
-        collection(db, "Productos"),
-        where("categoriaId", "==", categoriaId)
-      );
-
-      const consultaSnapshot = await getDocs(consulta);
-
-      const datos = [];
-      consultaSnapshot.forEach((documento) => {
-        datos.push({ id: documento.id, ...documento.data() });
-      });
-      setProductos(datos);
-    } catch (error) {
-      console.error("Error obteniendo productos por categoría: ", error);
-    } finally {
-      setCargandoProductos(false);
-    }
-  };
-
   const manejarCategoria = (categoriaId) => {
     setCategoriaSeleccionada(categoriaId);
-
-    if (categoriaId === "todos") {
-      setCargandoProductos(true);
-      obtenerProductos();
-      return;
-    }
-
-    obtenercategoriaporId(categoriaId);
+    setCargandoProductos(true);
+    navigation.setParams({ categoriaId });
   };
 
   useEffect(() => {
@@ -86,27 +45,37 @@ const Catalogo = ({ navigation }) => {
 
   useEffect(() => {
     let activo = true;
-    getDocs(collection(db, "Productos"))
-      .then((querySnapshot) => {
-        if (!activo) return;
-        setProductos(
-          querySnapshot.docs.map((documento) => ({
-            id: documento.id,
-            ...documento.data(),
-          })),
-        );
-      })
-      .catch((error) => {
-        console.error("Error obteniendo productos: ", error);
-      })
-      .finally(() => {
-        if (activo) setCargandoProductos(false);
-      });
+    const categoriaId = route.params?.categoriaId || "todos";
 
+    const cargarProductos = async () => {
+      try {
+        const productosRef = collection(db, "Productos");
+        const consulta =
+          categoriaId === "todos"
+            ? productosRef
+            : query(productosRef, where("categoriaId", "==", categoriaId));
+        const querySnapshot = await getDocs(consulta);
+        const datos = querySnapshot.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
+
+        if (activo) {
+          setProductos(datos);
+          setCategoriaSeleccionada(categoriaId);
+        }
+      } catch (error) {
+        console.error("Error obteniendo productos: ", error);
+      } finally {
+        if (activo) setCargandoProductos(false);
+      }
+    };
+
+    cargarProductos();
     return () => {
       activo = false;
     };
-  }, []);
+  }, [route.params?.categoriaId]);
 
   const productosFiltrados = productos.filter((producto) => {
     const coincideCategoria =
